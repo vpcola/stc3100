@@ -12,10 +12,8 @@ extern "C" {
 #include <sys/time.h>
 #include "driver/i2c.h"
 
-
-#define STC3100_ADDR 0x70
-
 esp_err_t stc3100_init(i2c_port_t i2cnum);
+esp_err_t stc3100_read_device_id(i2c_port_t i2cnum, uint8_t * devid, size_t len); 
 
 #ifdef __cpluplus
 }
