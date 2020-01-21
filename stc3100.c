@@ -11,7 +11,9 @@
 //#define STC3100_ADDR 0xE0         // STC3100 8-bit address
 
 /* ******************************************************************************** */
-#define SENSERESISTOR  33    // sense resistor value in milliOhms (10min, 100max)
+/** Fuel Gauge Rsense resistance in mOhms */
+#define STC3100_RSENSE_RESISTANCE				33.3e-3f     ///  Rsense resistance Ohm.
+
 /*   TO BE DEFINED ACCORDING TO HARDWARE IMPLEMENTATION                             */
 /* ******************************************************************************** */
 
@@ -159,4 +161,76 @@ esp_err_t stc3100_read_device_id(i2c_port_t i2cnum, uint8_t * devid, size_t len)
    return stc3100_read_reg(i2cnum, STC3100_REG_ID0, devid, len);
 }
 
+esp_err_t stc3100_get_battery_voltage(i2c_port_t i2cnum, float * battvoltage)
+{
+    esp_err_t ret;
+    float voltage;
+    uint8_t regs[2];
+
+    ret = stc3100_read_reg(i2cnum, STC3100_REG_VOLTAGE_LOW, (uint8_t *) &regs[0], 2);
+    if (ret == ESP_OK)
+    {
+        voltage = ((regs[1] & 0x0F) << 8) + regs[0];
+        voltage *= 2.44e-3f;
+
+        *battvoltage = voltage;
+    }
+
+    return ret;
+}
+
+esp_err_t stc3100_get_battery_current(i2c_port_t i2cnum, float * battcurrent)
+{
+    esp_err_t ret;
+    int16_t regval;
+    uint8_t data[2];
+
+    /* battery current is coded in 2's complement 14 bit format, and the LSB value is 11.77uV. */
+    ret = stc3100_read_reg(i2cnum, STC3100_REG_CURRENT_LOW, (uint8_t *) &data[0], 2);
+    if (ret == ESP_OK)
+    {
+        regval = (data[1] << 10) | (data[0] << 2);  // 16 bit signed
+        regval /= 4;    // 16 to 14 bit to get the correct value
+        *battcurrent = (float) regval * 11.77e-6f / STC3100_RSENSE_RESISTANCE;
+    }
+
+    return ret;
+}
+
+esp_err_t stc3100_get_battery_rem_charge(i2c_port_t i2cnum, float * battremchrg)
+{
+    esp_err_t ret;
+    int16_t regval;
+    uint8_t data[2];
+
+    /* The charge data is coded in 2's complement format, and the LSB value is 6.7 uV.h  */
+    ret = stc3100_read_reg(i2cnum, STC3100_REG_CHARGE_LOW, (uint8_t *) &data[0], 2);
+    if (ret == ESP_OK)
+    {
+        regval = (data[1] << 10) | (data[0] << 2);  // 16 bit signed
+        regval /= 4;    // 16 to 14 bit to get the correct value
+        *battremchrg = (float) regval * 6.70e-6f / STC3100_RSENSE_RESISTANCE;
+    }
+
+    return ret;
+}
+
+esp_err_t stc3100_get_battery_temperature(i2c_port_t i2cnum, float * batttemp)
+{
+    esp_err_t ret;
+    int16_t regval;
+    uint8_t data[2];
+
+    /* The temperature data is coded in 2's complement format, and the LSB value is 0.125 C */
+    ret = stc3100_read_reg(i2cnum, STC3100_REG_TEMPERATURE_LOW, (uint8_t *) &data[0], 2);
+    if (ret == ESP_OK)
+    {
+        regval = (data[1] << 10) | (data[0] << 2);  // 16 bit signed
+        regval /= 4;    // 16 to 14 bit to get the correct value
+        *batttemp = (float) regval * 0.125f;
+    }
+
+    return ret;
+
+}
 
