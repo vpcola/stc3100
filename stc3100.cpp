@@ -125,7 +125,7 @@ static esp_err_t stc3100_read_reg(i2c_port_t i2c_num, uint8_t reg, uint8_t * val
 }
 
 
-esp_err_t stc3100_init(i2c_port_t i2cnum)
+esp_err_t stc3100_init(i2c_port_t i2cnum, int resetGG)
 {
     esp_err_t ret;
     uint8_t devid;
@@ -143,12 +143,15 @@ esp_err_t stc3100_init(i2c_port_t i2cnum)
     // read the reg_ctrl to reset the GG_EOC and VTM_EOC bits
     stc3100_read_reg(i2cnum, STC3100_REG_CTRL, &regs[0], 1);
 
-    // Write CTRL
-    regs[0] = 0x02;
-    stc3100_write_reg(i2cnum, STC3100_REG_CTRL, &regs[0], 1);
-    // Write mode
-    regs[0] = 0x10;
-    stc3100_write_reg(i2cnum, STC3100_REG_MODE, &regs[0], 1);
+	  if (resetGG == 0)
+	  {
+    	// Write CTRL
+    	regs[0] = 0x03; // IO0DATA is open/unconnected (bit 0 = 1 ), GG_RST is reset ( bit 1 = 1 )
+    	stc3100_write_reg(i2cnum, STC3100_REG_CTRL, &regs[0], 1);
+    	// Write mode
+    	regs[0] = 0x10;
+    	stc3100_write_reg(i2cnum, STC3100_REG_MODE, &regs[0], 1);
+  	}
     
     return ret; 
 }

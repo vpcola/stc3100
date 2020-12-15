@@ -12,7 +12,7 @@ extern "C" {
 #include <sys/time.h>
 #include "driver/i2c.h"
 
-esp_err_t stc3100_init(i2c_port_t i2cnum);
+esp_err_t stc3100_init(i2c_port_t i2cnum, int resetGG);
 esp_err_t stc3100_read_device_id(i2c_port_t i2cnum, uint8_t * devid, size_t len); 
 esp_err_t stc3100_get_battery_voltage(i2c_port_t i2cnum, float * battvoltage);
 esp_err_t stc3100_get_battery_current(i2c_port_t i2cnum, float * battcurrent);
